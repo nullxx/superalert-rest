@@ -12,16 +12,27 @@ const logger = Logger('debug', __filename);
 
 const paginate = 100;
 
-async function sendNotification(req: RequestWithUser, res: Response, next: NextFunction): Promise<unknown> {
+async function sendNotification(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+): Promise<unknown> {
     try {
         const { title, body, category, risk = 'success' } = req.body;
 
         const tokensArr = await pushtokens.find({ user: req.user._id });
         if (tokensArr.length === 0)
-            return res.status(httpStatus.EXPECTATION_FAILED).json({ code: 0, msg: 'Not push token registered' });
+            return res
+                .status(httpStatus.EXPECTATION_FAILED)
+                .json({ code: 0, msg: 'Not push token registered' });
 
         await notifications.insert({
-            title, body, createdAt: new Date(), category, risk, user: req.user._id,
+            title,
+            body,
+            createdAt: new Date(),
+            category,
+            risk,
+            user: req.user._id,
         }); // more important to save than pushing notification
 
         const tokens = tokensArr.map(({ token }) => token);
@@ -68,37 +79,76 @@ async function sendNotification(req: RequestWithUser, res: Response, next: NextF
     }
 }
 
-async function getNotifications(req: RequestWithUser, res: Response, next: NextFunction): Promise<void> {
+async function getNotifications(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+): Promise<void> {
     try {
-        const page = Math.max(0, req.query['page'] as unknown as number);
+        // pagination in reverse order: page 0 is the last page
+        const requestedPage = Math.max(
+            0,
+            req.query['page'] as unknown as number,
+        );
 
-        const notificationsArr = await notifications.find({
-            user: req.user._id,
-        }, {
-            skip: page * paginate,
-            limit: paginate,
-            sort: [['createdAt', 1]],
+        const pages = Math.floor((await notifications.count()) / paginate);
+
+        const page = pages - requestedPage;
+
+        if (page < 0) {
+            res.json({
+                code: 1,
+                data: [],
+                hasNextPage: false,
+            });
+            return;
+        }
+
+        const notificationsArr = await notifications.find(
+            {
+                user: req.user._id,
+            },
+            {
+                skip: page * paginate,
+                limit: paginate,
+                sort: [['createdAt', 1]],
+            },
+        );
+
+        let nextPageCount = 0;
+        if (page !== 0) {
+            nextPageCount = await notifications.count(
+                {
+                    user: req.user._id,
+                },
+                {
+                    skip: (page - 1) * paginate,
+                    limit: paginate,
+                },
+            );
+        }
+
+        res.json({
+            code: 1,
+            data: notificationsArr,
+            hasNextPage: nextPageCount > 1,
         });
-
-        const nextPage = await notifications.find({
-            user: req.user._id,
-        }, {
-            skip: (page + 1) * paginate,
-            limit: paginate,
-            sort: [['createdAt', 1]],
-        });
-
-        res.json({ code: 1, data: notificationsArr, hasNextPage: nextPage.length > 1 });
     } catch (error) {
         next(error);
     }
 }
 
-async function deleteNotification(req: RequestWithUser, res: Response, next: NextFunction): Promise<void> {
+async function deleteNotification(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+): Promise<void> {
     try {
         const { notificationId } = req.body;
 
-        const resp = await notifications.remove({ $and: [{ _id: { $in: [notificationId] } }, { user: req.user._id }] });
+        const resp = await notifications.remove({
+            $and: [{ _id: { $in: [notificationId] } }, { user: req.user._id }],
+        });
 
         if (resp.deletedCount > 0) {
             res.json({ code: 1, data: 'OK' });
