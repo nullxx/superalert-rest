@@ -5,6 +5,7 @@ import { RequestWithUser } from "../interfaces/RequestWithUser";
 import admin from "../lib/firebase";
 import { connection } from "../config/database";
 import httpStatus from "http-status";
+import axios from "axios";
 
 const pushtokens = connection.get("pushtokens");
 const notifications = connection.get("notifications");
@@ -18,7 +19,7 @@ async function sendNotification(
     next: NextFunction,
 ): Promise<unknown> {
     try {
-        const { title, body, category, risk, type } = req.body;
+        const { title, body, category, risk, type, webhookURL } = req.body;
 
         const tokensArr = await pushtokens.find({ user: req.user._id });
         if (tokensArr.length === 0)
@@ -34,6 +35,7 @@ async function sendNotification(
             risk,
             user: req.user._id,
             type,
+            webhookURL,
         }); // more important to save than pushing notification
 
         const tokens = tokensArr.map(({ token }) => token);
@@ -116,7 +118,6 @@ async function getNotifications(
             },
         );
 
-
         res.json({
             code: 1,
             data: notificationsArr,
@@ -165,6 +166,13 @@ async function answerPrompt(
 
         if (!notificationDoc) {
             return res.json({ code: 0, msg: "No notification found" });
+        }
+
+        if (notificationDoc.webhookURL) {
+            await axios.post(notificationDoc.webhookURL, {
+                answer,
+                notificationId: notificationDoc._id,
+            });
         }
 
         res.json({ code: 1, data: notificationDoc });

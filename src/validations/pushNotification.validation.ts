@@ -14,6 +14,7 @@ const sendPushNotification = [
         if (risks.includes(input)) return true;
         throw new Error(`Invalid value. Available risks: ${risks.join(', ')}`);
     }),
+    body('webhookURL').isString().optional(),
 ];
 
 const getPushNotification = [
