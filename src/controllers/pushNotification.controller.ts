@@ -27,7 +27,7 @@ async function sendNotification(
                 .status(httpStatus.EXPECTATION_FAILED)
                 .json({ code: 0, msg: "Not push token registered" });
 
-        await notifications.insert({
+        const notification = await notifications.insert({
             title,
             body,
             createdAt: new Date(),
@@ -76,7 +76,7 @@ async function sendNotification(
             throw new Error(errors.join(", "));
         }
 
-        res.json({ code: 1, msg: "OK" });
+        res.json({ code: 1, msg: "OK", data: { notification } });
     } catch (error) {
         next(error);
     }
