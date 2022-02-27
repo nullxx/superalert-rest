@@ -1,19 +1,20 @@
-import * as controller from '../controllers/pushNotification.controller';
+import * as controller from "../controllers/pushNotification.controller";
 
 import {
     deletePushNotification as deletePushNotificationValidation,
     getPushNotification as getPushNotificationValidation,
     sendPushNotification as sendPushNotificationValidation,
-} from '../validations/pushNotification.validation';
+    answerPrompt as answerPromptValidation,
+} from "../validations/pushNotification.validation";
 
-import { Router } from 'express';
-import { applyValidation } from '../validations/index.validation';
-import { injectUser } from '../middlewares/auth.middleware';
+import { Router } from "express";
+import { applyValidation } from "../validations/index.validation";
+import { injectUser } from "../middlewares/auth.middleware";
 
 export const pushNotificationRouter = Router();
 
 pushNotificationRouter
-    .route('/')
+    .route("/")
     .get(
         injectUser,
         ...getPushNotificationValidation,
@@ -28,11 +29,19 @@ pushNotificationRouter
     );
 
 pushNotificationRouter
-    .route('/delete')
+    .route("/:notification")
+    .put(
+        injectUser,
+        ...answerPromptValidation,
+        applyValidation,
+        controller.answerPrompt,
+    );
+
+pushNotificationRouter
+    .route("/delete")
     .post(
         injectUser,
         ...deletePushNotificationValidation,
         applyValidation,
         controller.deleteNotification,
     );
-
