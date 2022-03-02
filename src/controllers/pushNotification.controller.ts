@@ -169,10 +169,11 @@ async function answerPrompt(
         }
 
         if (notificationDoc.webhookURL) {
-            await axios.post(notificationDoc.webhookURL, {
+            axios.post(notificationDoc.webhookURL, {
                 answer,
                 notificationId: notificationDoc._id,
-            });
+            }).catch(logger.error)
+            .then(() => logger.debug("Weebhook send for notification", notificationDoc._id));
         }
 
         res.json({ code: 1, data: notificationDoc });
