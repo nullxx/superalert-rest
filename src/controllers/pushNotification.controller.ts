@@ -158,22 +158,28 @@ async function answerPrompt(
     try {
         const { notification } = req.params;
         const { answer } = req.body;
-
         const notificationDoc = await notifications.findOneAndUpdate(
-            { _id: notification },
+            { _id: notification, answer: null }, // only update if not answered
             { $set: { answer } },
         );
 
         if (!notificationDoc) {
-            return res.json({ code: 0, msg: "No notification found" });
+            return res.json({ code: 0, msg: "No notification or already answered" });
         }
 
         if (notificationDoc.webhookURL) {
-            axios.post(notificationDoc.webhookURL, {
-                answer,
-                notificationId: notificationDoc._id,
-            }).catch(logger.error)
-            .then(() => logger.debug("Weebhook send for notification", notificationDoc._id));
+            axios
+                .post(notificationDoc.webhookURL, {
+                    answer,
+                    notificationId: notificationDoc._id,
+                })
+                .catch(logger.error)
+                .then(() =>
+                    logger.debug(
+                        "Weebhook send for notification",
+                        notificationDoc._id,
+                    ),
+                );
         }
 
         res.json({ code: 1, data: notificationDoc });
