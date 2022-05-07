@@ -19,6 +19,7 @@ const sendPushNotification = [
 
 const getPushNotification = [
     query('page').isNumeric(),
+    query('paginate').isNumeric().default(50),
 ];
 
 const deletePushNotification = [

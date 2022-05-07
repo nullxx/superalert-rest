@@ -11,8 +11,6 @@ const pushtokens = connection.get("pushtokens");
 const notifications = connection.get("notifications");
 const logger = Logger("debug", __filename);
 
-const paginate = 10;
-
 async function sendNotification(
     req: RequestWithUser,
     res: Response,
@@ -25,7 +23,7 @@ async function sendNotification(
         if (tokensArr.length === 0)
             return res
                 .status(httpStatus.EXPECTATION_FAILED)
-                .json({ code: 0, msg: "Not push token registered" });
+                .json({ code: 0, message: "Not push token registered" });
 
         const notification = await notifications.insert({
             title,
@@ -47,8 +45,7 @@ async function sendNotification(
                 body,
             },
             data: {
-                category,
-                risk,
+                notification,
             },
         });
 
@@ -76,7 +73,7 @@ async function sendNotification(
             throw new Error(errors.join(", "));
         }
 
-        res.json({ code: 1, msg: "OK", data: { notification } });
+        res.json({ code: 1, message: "OK", data: { notification } });
     } catch (error) {
         next(error);
     }
@@ -89,9 +86,11 @@ async function getNotifications(
 ): Promise<void> {
     try {
         // pagination in reverse order: page 0 is the last page
+        const paginate = req.query.paginate as unknown as number;
+
         const requestedPage = Math.max(
             0,
-            req.query["page"] as unknown as number,
+            req.query.page as unknown as number,
         );
 
         const totalNotis = await notifications.count({
@@ -164,7 +163,10 @@ async function answerPrompt(
         );
 
         if (!notificationDoc) {
-            return res.json({ code: 0, msg: "No notification or already answered" });
+            return res.json({
+                code: 0,
+                message: "No notification or already answered",
+            });
         }
 
         if (notificationDoc.webhookURL) {
