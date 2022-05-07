@@ -85,10 +85,9 @@ async function getNotifications(
     next: NextFunction,
 ): Promise<void> {
     try {
-        // pagination in reverse order: page 0 is the last page
-        const paginate = req.query.paginate as unknown as number;
+        const paginate = Number(req.query.paginate);
 
-        const requestedPage = Math.max(
+        const page = Math.max(
             0,
             req.query.page as unknown as number,
         );
@@ -97,14 +96,13 @@ async function getNotifications(
             user: req.user._id,
         });
 
-        const page = Math.max(1, requestedPage + 1);
+        // const page = Math.max(1, requestedPage + 1);
 
-        const skip = Math.max(0, totalNotis - page * paginate);
-        const target = Math.max(0, totalNotis - page * paginate + paginate);
-        const limit = target - skip;
+        const skip = Math.max(0, page * paginate);
+        const limit = skip + paginate;
 
-        const nextTarget = totalNotis - (page + 1) * paginate + paginate;
-        const hasNextPage = nextTarget > 0;
+        const nextSkip = Math.max(0, (page + 1) * paginate);
+        const hasNextPage = nextSkip < totalNotis;
 
         const notificationsArr = await notifications.find(
             {
@@ -113,7 +111,7 @@ async function getNotifications(
             {
                 skip,
                 limit,
-                sort: { createdAt: 1 },
+                sort: { createdAt: -1 }, // page 0 is the last page
             },
         );
 
