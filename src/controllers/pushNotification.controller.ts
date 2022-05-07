@@ -45,7 +45,7 @@ async function sendNotification(
                 body,
             },
             data: {
-                notification,
+                notification: JSON.stringify(notification),
             },
         });
 
