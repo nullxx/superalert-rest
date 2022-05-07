@@ -44,9 +44,9 @@ async function sendNotification(
                 title,
                 body,
             },
-            data: {
-                notification: JSON.stringify(notification),
-            },
+            // data: {
+            //     notification: JSON.stringify(notification),
+            // },
         });
 
         const errors = [];
