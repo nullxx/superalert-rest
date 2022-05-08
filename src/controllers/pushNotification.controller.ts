@@ -19,8 +19,8 @@ async function sendNotification(
     try {
         const { title, body, category, risk, type, webhookURL } = req.body;
 
-        const tokensArr = await pushtokens.find({ user: req.user._id });
-        if (tokensArr.length === 0)
+        const tokens = await pushtokens.distinct("token", { user: req.user._id });
+        if (tokens.length === 0)
             return res
                 .status(httpStatus.EXPECTATION_FAILED)
                 .json({ code: 0, message: "Not push token registered" });
@@ -36,17 +36,15 @@ async function sendNotification(
             webhookURL,
         }); // more important to save than pushing notification
 
-        const tokens = tokensArr.map(({ token }) => token);
-
         const pushSendResponse = await admin.messaging().sendMulticast({
             tokens,
             notification: {
                 title,
                 body,
             },
-            // data: {
-            //     notification: JSON.stringify(notification),
-            // },
+            data: {
+                notification: JSON.stringify(notification),
+            },
         });
 
         const errors = [];
