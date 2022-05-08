@@ -56,7 +56,6 @@ async function sendNotification(
                 switch (pResponse.error.code) {
                     case "messaging/invalid-registration-token":
                     case "messaging/registration-token-not-registered":
-                    case "messaging/invalid-argument":
                         const token = tokens[i];
                         logger.debug("Deleting token", token);
                         await pushtokens.remove({ token });
