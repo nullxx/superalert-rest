@@ -6,6 +6,12 @@ import admin from "../lib/firebase";
 import { connection } from "../config/database";
 import httpStatus from "http-status";
 import axios from "axios";
+import type { DeleteWriteOpResultObject } from "mongodb";
+
+const firebaseDeleteTokensError = [
+    "messaging/invalid-registration-token",
+    "messaging/registration-token-not-registered",
+];
 
 const pushtokens = connection.get("pushtokens");
 const notifications = connection.get("notifications");
@@ -19,7 +25,9 @@ async function sendNotification(
     try {
         const { title, body, category, risk, type, webhookURL } = req.body;
 
-        const tokens = await pushtokens.distinct("token", { user: req.user._id });
+        const tokens = await pushtokens.distinct("token", {
+            user: req.user._id,
+        });
         if (tokens.length === 0)
             return res
                 .status(httpStatus.EXPECTATION_FAILED)
@@ -47,23 +55,22 @@ async function sendNotification(
             },
         });
 
-        const errors = [];
+        const errors: admin.FirebaseError[] = [];
         if (pushSendResponse.failureCount > 0) {
-            for (const [i, pResponse] of pushSendResponse.responses.entries()) {
-                if (pResponse.success) continue;
-
-                logger.debug("pResponse.error", pResponse.error);
-                switch (pResponse.error.code) {
-                    case "messaging/invalid-registration-token":
-                    case "messaging/registration-token-not-registered":
-                        const token = tokens[i];
-                        logger.debug("Deleting token", token);
-                        await pushtokens.remove({ token });
-                        break;
-                    default:
-                        errors.push(pResponse.error.message);
+            const removeTokensPromises: Promise<DeleteWriteOpResultObject>[] =
+                [];
+            pushSendResponse.responses.forEach((response, idx) => {
+                if (response.success) return;
+                if (!firebaseDeleteTokensError.includes(response.error.code)) {
+                    return errors.push(response.error);
                 }
-            }
+
+                removeTokensPromises.push(
+                    pushtokens.remove({ token: tokens[idx] }),
+                );
+            });
+
+            await Promise.all(removeTokensPromises);
         }
 
         if (errors.length > 0) {
@@ -84,10 +91,7 @@ async function getNotifications(
     try {
         const paginate = Number(req.query.paginate);
 
-        const page = Math.max(
-            0,
-            req.query.page as unknown as number,
-        );
+        const page = Math.max(0, req.query.page as unknown as number);
 
         const totalNotis = await notifications.count({
             user: req.user._id,
@@ -130,7 +134,10 @@ async function deleteNotification(
     try {
         const { notificationId } = req.body;
 
-        const resp = await notifications.remove({ _id: notificationId, user: req.user._id });
+        const resp = await notifications.remove({
+            _id: notificationId,
+            user: req.user._id,
+        });
 
         if (resp.deletedCount > 0) {
             res.json({ code: 1, data: "OK" });
