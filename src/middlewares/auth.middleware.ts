@@ -17,13 +17,13 @@ export const injectUser = async (
         const authorization = req.headers.authorization;
         const queryBearerToken = req.query.bearerToken;
 
-        if (!authorization || !queryBearerToken)
+        if (!authorization && !queryBearerToken)
             return res.status(httpStatus.UNAUTHORIZED).json({
                 code: 0,
                 message: "Provide a bearer token on the authorization header or query string 'bearerToken'",
             });
 
-        const bearer = authorization.split("Bearer ")[1] || queryBearerToken.toString();
+        const bearer = authorization?.split("Bearer ")[1] || queryBearerToken.toString();
         if (!bearer)
             return res
                 .status(httpStatus.UNAUTHORIZED)
