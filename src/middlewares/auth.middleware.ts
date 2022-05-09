@@ -15,14 +15,15 @@ export const injectUser = async (
 ): Promise<unknown> => {
     try {
         const authorization = req.headers.authorization;
+        const queryBearerToken = req.query.bearerToken;
 
-        if (!authorization)
+        if (!authorization || !queryBearerToken)
             return res.status(httpStatus.UNAUTHORIZED).json({
                 code: 0,
-                message: "Provide token and the authorization header",
+                message: "Provide a bearer token on the authorization header or query string 'bearerToken'",
             });
 
-        const bearer = authorization.split("Bearer ")[1];
+        const bearer = authorization.split("Bearer ")[1] || queryBearerToken.toString();
         if (!bearer)
             return res
                 .status(httpStatus.UNAUTHORIZED)
