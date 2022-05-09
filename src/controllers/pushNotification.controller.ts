@@ -130,9 +130,7 @@ async function deleteNotification(
     try {
         const { notificationId } = req.body;
 
-        const resp = await notifications.remove({
-            $and: [{ _id: { $in: [notificationId] } }, { user: req.user._id }],
-        });
+        const resp = await notifications.remove({ _id: notificationId, user: req.user._id });
 
         if (resp.deletedCount > 0) {
             res.json({ code: 1, data: "OK" });
