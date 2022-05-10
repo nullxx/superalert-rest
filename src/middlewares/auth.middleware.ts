@@ -52,48 +52,34 @@ export const injectUser = async (
     }
 };
 
-export const injectUserHard = async (
+export const injectUserSoft = async (
     req: RequestWithUser,
     res: Response,
     next: NextFunction,
 ): Promise<unknown> => {
     try {
-        const authorization = req.headers.authorization;
         const key = req.query.key;
 
-        if (!authorization || !key)
+        if (!key)
             return res.status(httpStatus.UNAUTHORIZED).json({
                 code: 0,
                 message:
-                    "Provide a bearer token on the authorization header and query string 'key'",
+                    "Provide a query string 'key'",
             });
 
-        const bearer = authorization?.split("Bearer ")[1];
-        if (!bearer)
-            return res
-                .status(httpStatus.UNAUTHORIZED)
-                .json({ code: 0, message: "Auth not valid" });
-
-        const decoded = jwt.verify(bearer, process.env.SECRET) as User;
-        if (!decoded.email)
-            return res.status(httpStatus.UNAUTHORIZED).json({
-                code: 0,
-                message: "Email not found in decoded token auth",
-            });
-
-        const user = await users.findOne({ email: decoded.email });
-        if (!user)
-            return res
-                .status(httpStatus.UNAUTHORIZED)
-                .json({ code: 0, message: "User not found" });
-        req.user = user;
-
-        const storedKey = await keys.findOne({ key, user: user._id });
+        const storedKey = await keys.findOne({ key });
         if (!storedKey)
             return res
                 .status(httpStatus.UNAUTHORIZED)
                 .json({ code: 0, message: "Key not found" });
         req.key = storedKey;
+
+        const user = await users.findOne({ _id: storedKey.user });
+        if (!user)
+            return res
+                .status(httpStatus.UNAUTHORIZED)
+                .json({ code: 0, message: "User not found" });
+        req.user = user;
 
         // validate storedKey.allowedOrigins that can be domains or ipv4
         const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;

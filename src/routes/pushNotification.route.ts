@@ -9,7 +9,7 @@ import {
 
 import { Router } from "express";
 import { applyValidation } from "../validations/index.validation";
-import { injectUser, injectUserHard } from '../middlewares/auth.middleware';
+import { injectUser, injectUserSoft } from '../middlewares/auth.middleware';
 
 export const pushNotificationRouter = Router();
 
@@ -22,7 +22,7 @@ pushNotificationRouter
         controller.getNotifications,
     )
     .post(
-        injectUserHard,
+        injectUserSoft,
         ...sendPushNotificationValidation,
         applyValidation,
         controller.sendNotification,
