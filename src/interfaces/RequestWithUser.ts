@@ -3,4 +3,5 @@ import { User } from './User';
 
 export interface RequestWithUser extends Request {
     user: User;
+    key: string;
 }

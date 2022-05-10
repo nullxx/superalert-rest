@@ -21,4 +21,8 @@ async function verify(password: string, hash: string): Promise<boolean> {
     });
 }
 
-export { hash, verify };
+function randomBytes(length: number): string {
+    return crypto.randomBytes(length).toString('hex').toUpperCase();
+}
+
+export { hash, verify, randomBytes };
