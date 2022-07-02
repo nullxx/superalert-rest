@@ -6,7 +6,7 @@ import { RequestWithUser } from '../interfaces/RequestWithUser';
 const keysCollection = connection.get("keys");
 
 export async function getKeys(
-    req: Request,
+    req: RequestWithUser,
     res: Response,
     next: NextFunction,
 ): Promise<void> {
