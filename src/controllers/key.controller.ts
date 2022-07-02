@@ -11,7 +11,7 @@ export async function getKeys(
     next: NextFunction,
 ): Promise<void> {
     try {
-        const keys = await keysCollection.find({});
+        const keys = await keysCollection.find({ user: req.user._id });
 
         res.json({
             code: 1,
