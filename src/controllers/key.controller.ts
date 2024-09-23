@@ -6,12 +6,12 @@ import { RequestWithUser } from '../interfaces/RequestWithUser';
 const keysCollection = connection.get("keys");
 
 export async function getKeys(
-    req: Request,
+    req: RequestWithUser,
     res: Response,
     next: NextFunction,
 ): Promise<void> {
     try {
-        const keys = await keysCollection.find({});
+        const keys = await keysCollection.find({ user: req.user._id });
 
         res.json({
             code: 1,
