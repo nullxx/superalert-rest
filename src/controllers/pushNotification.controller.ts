@@ -44,7 +44,7 @@ async function sendNotification(
             webhookURL,
         }); // more important to save than pushing notification
 
-        const pushSendResponse = await admin.messaging().sendMulticast({
+        const pushSendResponse = await admin.messaging().sendEachForMulticast({
             tokens,
             notification: {
                 title,
